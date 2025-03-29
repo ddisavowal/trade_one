@@ -1,0 +1,206 @@
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = '/lk_login';
+            return;
+        }
+
+        let originalData = {}; // Храним изначальные данные
+
+        function initForm() {
+            const email = document.querySelector('[data-input-lid="1742062754534"] input');
+            const name = document.querySelector('[data-input-lid="1742062754535"] input');
+            const last_name = document.querySelector('[data-input-lid="1742062887256"] input');
+            const phone = document.querySelector('[data-input-lid="1742063365929"] input');
+            const birthdate = document.querySelector('[data-input-lid="1742063365930"] input');
+            const save_button = document.querySelector('[data-elem-id="1742674166263"]');
+
+            if (!email || !name || !phone || !birthdate || !save_button) {
+                console.warn('Не все поля найдены!');
+                return;
+            }
+
+            birthdate.setAttribute('readonly', true);
+            birthdate.style.pointerEvents = 'none';
+
+            // Устанавливаем атрибуты для поля телефона
+            phone.setAttribute('type', 'tel');
+            phone.setAttribute('pattern', '[0-9]{11}'); // Разрешаем ввод только 11 цифр
+
+            function fetchUserData() {
+                fetch('http://127.0.0.1:8000/api/bitrix-user/', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        originalData = {
+                            email: data.EMAIL?.[0]?.VALUE || '',
+                            name: data.NAME || '',
+                            last_name: data.LAST_NAME || '',
+                            phone: data.HAS_PHONE === 'Y' ? (data.PHONE?.[0]?.VALUE || '') : '',
+                            birthdate: data.BIRTHDATE || '',
+                        };
+
+                        email.value = originalData.email;
+                        name.value = originalData.name;
+                        last_name.value = originalData.last_name;
+                        birthdate.value = originalData.birthdate;
+
+                        // Устанавливаем значение телефона в поле
+                        phone.value = originalData.phone;
+
+                        validateForm(); // Проверка данных при загрузке
+                    })
+                    .catch(error => console.error("Ошибка при получении данных:", error));
+            }
+
+            function validateEmail(emailValue) {
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                return emailPattern.test(emailValue);
+            }
+
+            // Обновленная функция валидации телефона
+            function validatePhone() {
+                const phoneValue = phone.value.trim(); // Получаем значение из поля ввода
+                console.log("Проверка телефона:", phoneValue);
+
+                let cleanedPhone = phoneValue.replace(/[^\d]/g, ''); // Очищаем от нецифровых символов
+
+                // Валидация на корректный формат номера (должен быть не пустым и длина 11 цифр)
+                return cleanedPhone.length === 11;
+            }
+
+            function validateForm() {
+                let isValid = true;
+
+                // Валидация email
+                if (!validateEmail(email.value)) {
+                    email.classList.add('invalid');
+                    showError(email, 'Некорректный email');
+                    isValid = false;
+                } else {
+                    email.classList.remove('invalid');
+                    removeError(email);
+                }
+
+                // Валидация телефона
+                if (phone.value && !validatePhone()) {
+                    phone.classList.add('invalid');
+                    showError(phone, 'Некорректный номер телефона');
+                    isValid = false;
+                } else {
+                    phone.classList.remove('invalid');
+                    removeError(phone);
+                }
+
+                // Включение/выключение кнопки сохранения в зависимости от валидности формы
+                save_button.disabled = !isValid;
+
+                return isValid;
+            }
+
+            function showError(input, message) {
+                removeError(input); // Удаляем предыдущую ошибку, если была
+
+                if (!input || !input.parentNode) return; // Проверяем, есть ли родитель
+
+                const errorElement = document.createElement('div');
+                errorElement.className = 'error-message';
+                errorElement.style.color = 'red';
+                errorElement.style.fontSize = '12px';
+                errorElement.textContent = message;
+
+                input.parentNode.appendChild(errorElement);
+            }
+
+            function removeError(input) {
+                if (!input || !input.parentNode) return; // Проверяем, есть ли родитель
+
+                const errorElement = input.parentNode.querySelector('.error-message');
+                if (errorElement) {
+                    errorElement.remove();
+                }
+            }
+
+            function updateUserData() {
+                // Валидация формы перед отправкой данных
+                if (!validateForm()) {
+                    return;
+                }
+
+                let updatedData = {};
+
+                // Извлекаем значение телефона
+                const phoneValue = phone.value.trim();
+                console.log("Телефон перед отправкой:", phoneValue);
+
+                // Если телефон изменился, добавляем его в обновленные данные
+                if (phoneValue !== originalData.phone) {
+                    updatedData.phone = phoneValue;
+                }
+
+                if (name.value !== originalData.name) updatedData.name = name.value;
+                if (last_name.value !== originalData.last_name) updatedData.last_name = last_name.value;
+                if (email.value !== originalData.email) updatedData.email = email.value;
+
+                if (Object.keys(updatedData).length === 0) {
+                    alert("Данные не изменены!");
+                    return;
+                }
+
+                fetch('http://127.0.0.1:8000/api/update-bitrix-user/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updatedData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            fetchUserData();
+                            alert("Данные успешно обновлены!");
+                        } else {
+                            alert('Ошибка изменения данных');
+                        }
+                    })
+                    .catch(error => console.error("Ошибка запроса:", error));
+            }
+
+            fetchUserData();
+
+            email.addEventListener('input', validateForm);
+            phone.addEventListener('input', validateForm);
+
+            save_button.addEventListener('click', updateUserData);
+
+            const logoutButton = document.querySelector('[data-elem-id="1742058529763"]');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', () => {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/lk_login';
+                });
+            }
+        }
+
+        const observer = new MutationObserver(() => {
+            const email = document.querySelector('[data-input-lid="1742062754534"] input');
+            const name = document.querySelector('[data-input-lid="1742062754535"] input');
+            const last_name = document.querySelector('[data-input-lid="1742062887256"] input');
+            const phone = document.querySelector('[data-input-lid="1742063365929"] input');
+            const birthdate = document.querySelector('[data-input-lid="1742063365930"] input');
+
+            // Если все поля найдены, прекращаем наблюдение и загружаем данные
+            if (email && name && last_name && phone && birthdate) {
+                observer.disconnect();
+                initForm();
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
+
+</script>

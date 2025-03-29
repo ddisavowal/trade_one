@@ -1,0 +1,74 @@
+<script>
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        window.location.href = '/lk_login';
+    }
+    // Функция для получения данных пользователя по токену
+    function fetchUserData() {
+
+        console.log("Запрашиваем данные пользователя...");
+
+        // Отправляем запрос для получения данных с авторизацией по токену
+        fetch('http://127.0.0.1:8000/api/bitrix-user/', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Данные пользователя:", data);
+                document.querySelector('[field="tn_text_1742060316961"]').innerHTML = `
+                // <div style="position: absolute; top: 80px; left: 400px;;">
+                    <p>${data.NAME ?? ''}</p>
+                // </div>
+            `;
+
+            })
+            .catch(error => {
+                console.error("Ошибка при получении данных:", error);
+            });
+        fetch('http://127.0.0.1:8000/api/bonus-history/', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Данные пользователя:", data);
+
+                document.querySelector('[field="tn_text_1742060326760"]').innerHTML = `
+                // <div style="position: absolute; top: 80px; left: 400px;;">
+                    <p>${data.bonus_history.level_text ?? '10%'}</p>
+                // </div>
+            `;
+                document.querySelector('[field="tn_text_1742060334644"]').innerHTML = `
+                // <div style="position: absolute; top: 80px; left: 400px;;">
+                    <p>${data.bonus_history.count ?? 0}</p>
+                // </div>
+            `;
+
+            })
+            .catch(error => {
+                console.error("Ошибка при получении данных:", error);
+            });
+
+
+
+
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        fetchUserData();
+        const logoutButton = document.querySelector('[data-elem-id="1742058529763"]');
+
+        logoutButton.addEventListener('click', function () {
+            localStorage.removeItem('auth_token');  // Удаляем токен
+            window.location.href = '/lk_login';
+        });
+    });
+
+
+
+</script>

@@ -1,0 +1,173 @@
+<script>
+    // document.addEventListener("DOMContentLoaded", function () {
+    const observer2 = new MutationObserver(function (mutationsList, observer) {
+
+        const form = document.querySelector('#form899921581');
+        if (form) {
+            observer.disconnect();
+
+            const button = form.querySelector('button[type="submit"]');
+
+            button.addEventListener('click', function (event) {
+                event.preventDefault(); // Предотвращаем стандартное поведение кнопки (отправка формы)
+
+                console.log("Кнопка нажата, собираем данные...");
+
+                // Получаем данные из полей формы
+                const email = document.querySelector('[data-input-lid="1742286453191"] input').value;
+                const name = document.querySelector('[data-input-lid="1742286453192"] input').value;
+                console.log(email);
+                console.log(name);
+
+                if (!email || !name) {
+                    alert("Введите email и Имя!");
+                    return;
+                }
+
+                fetch('http://127.0.0.1:8000/api/register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Ответ от сервера:", data);
+                        if (data.message) {
+                            localStorage.setItem('registeredEmail', email);
+                            localStorage.setItem('registeredName', name);
+                            document.getElementById('rec898848472').style.display = 'none';
+                            document.getElementById('rec899921581').style.display = 'none';
+                            document.getElementById('rec899934118').style.display = 'block';
+                        } else {
+                            alert('Ошибка регистрации');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Ошибка запроса:", error);
+                    });
+            });
+
+        }
+        else {
+            console.log('проблемы с формой');
+            return;
+
+
+        }
+
+
+    });
+    observer2.observe(document.body, { childList: true, subtree: true });
+
+</script>
+
+
+///OTP CODE
+<script>
+    // document.addEventListener("DOMContentLoaded", function () {
+    const observer3 = new MutationObserver(function (mutationsList, observer) {
+
+        const form = document.querySelector('#form899934118');
+        if (form) {
+            observer.disconnect();
+
+            const button = form.querySelector('button[type="submit"]');
+
+            const passwordField = form.querySelector(`[data-input-lid="1742286024216"] input`);
+            const codeField = form.querySelector('[data-input-lid="1742286024215"] input');
+
+            // Изменяем атрибут type на "password"
+            if (passwordField) {
+                passwordField.setAttribute('type', 'password');
+                passwordField.setAttribute('name', 'password');
+                // Убираем валидацию на "name"
+                passwordField.removeAttribute('data-tilda-rule');
+            }
+            if (codeField) {
+                codeField.setAttribute('type', 'number');
+                codeField.setAttribute('name', 'otp_code');
+                codeField.removeAttribute('data-tilda-rule');
+            }
+
+            // Обработчик отправки формы входа
+            button.addEventListener('click', function (event) {
+                event.preventDefault(); // Предотвращаем стандартное поведение кнопки (отправка формы)
+
+                console.log("Кнопка нажата, собираем данные...");
+
+                // Получаем данные из полей формы
+                const email = localStorage.getItem('registeredEmail');
+                const name = localStorage.getItem('registeredName');
+                const code = codeField.value;
+                const password = passwordField.value;
+
+
+                if (!code || !password) {
+                    alert("Введите код подтверждения и пароль!");
+                    return;
+                }
+
+
+                fetch('http://127.0.0.1:8000/api/verify/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        name: name,
+                        otp_code: code,
+                        password: password
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Ответ от сервера:", data);
+                        if (data) {
+                            login(email, password);
+
+                        } else {
+                            alert('Ошибка регистрации');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Ошибка запроса:", error);
+                    });
+            });
+
+        }
+        else {
+            console.error("Форма не найдена!");
+            return;
+
+
+        }
+
+
+    });
+
+
+    observer3.observe(document.body, { childList: true, subtree: true });
+
+    function login(email, password) {
+        fetch('http://127.0.0.1:8000/api/login/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access) {
+                    localStorage.setItem('auth_token', data.access);
+                    window.location.href = '/lk_main';
+                } else {
+                    alert('Ошибка авторизации');
+                }
+            })
+            .catch(error => console.error("Ошибка запроса:", error));
+    }
+</script>

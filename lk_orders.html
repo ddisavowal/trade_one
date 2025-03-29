@@ -1,0 +1,308 @@
+<div id="orders-container"></div>
+<!-- Шаблон заказа (скрыт) -->
+<div id="order-template" style="display: none;">
+    <div class="t396__elem tn-elem tn-elem__9124258901743014111876" data-elem-id="1743014111876" data-elem-type="shape"
+        data-field-top-value="154" data-field-left-value="173" data-field-height-value="164"
+        data-field-width-value="959" data-field-axisy-value="top" data-field-axisx-value="left"
+        data-field-container-value="grid" data-field-topunits-value="px" data-field-leftunits-value="px"
+        data-field-heightunits-value="px" data-field-widthunits-value="px" data-field-widthmode-value="fixed"
+        data-field-heightmode-value="fixed" bis_skin_checked="1">
+
+        <div class="tn-atom">
+            <div class="order-date"></div>
+            <div class="order-products"></div>
+            <div class="order-status"></div>
+            <div class="order-bonuses"></div>
+            <div class="order-amount"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = '/lk_login';
+            return;
+        }
+
+        let originalData = {}; // Храним изначальные данные
+
+        function initForm() {
+
+
+            function fetchUserOrders() {
+                fetch('http://127.0.0.1:8000/api/get_orders/', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                    .then(response => response.json())
+                    .then(data => renderOrders(data))
+                    .catch(error => console.error("Ошибка при получении данных:", error));
+            }
+
+            function renderOrders(orders) {
+                // const container = document.getElementById("orders-container");
+                // container.innerHTML = ""; // Очищаем перед рендером
+
+                const container = document.getElementById('orders-container');
+                const template = document.getElementById('order-template'); // Берём шаблон
+
+                container.innerHTML = ""; // Очищаем перед добавлением новых заказов
+
+                orders.forEach(order => {
+                    const orderBlock = template.cloneNode(true);
+                    orderBlock.removeAttribute("id"); // Убираем ID, чтобы не было дубликатов
+                    orderBlock.classList.remove("hidden"); // Делаем видимым
+                    // orderBlock.style.display = "block"; // Делаем видимым
+                    // orderBlock.id = ""; // Убираем id, чтобы не было дубликатов
+
+                    // **Заполняем данные**
+                    orderBlock.querySelector('.order-date').textContent = order.closedate || 'Дата не указана';
+
+                    // Состав заказа
+                    const productsContainer = orderBlock.querySelector('.order-products');
+                    productsContainer.innerHTML = `
+                        <div>Состав (${order.products.length}):</div>
+                        ${order.products.map(p =>
+                        `<div class="product-image" data-id="${p.product_id}" style="width: 50px; height: 50px; background: gray; cursor: pointer;"></div>`
+                    ).join('')}
+                    `;
+
+                    // Статус заказа
+                    orderBlock.querySelector('.order-status').textContent = order.status || 'Неизвестно';
+
+                    // Бонусы
+                    orderBlock.querySelector('.order-bonuses').innerHTML = `
+                        <div>Начислено: ${order.add_bonus}</div>
+                        <div>Списано: ${order.off_bonus}</div>
+                    `;
+
+                    // Сумма заказа
+                    orderBlock.querySelector('.order-amount').textContent =
+                        order.products.reduce((sum, p) => sum + p.price, 0) + " ₽";
+
+                    // **Обработчик клика на товары**
+                    orderBlock.querySelectorAll('.product-image').forEach(img => {
+                        img.addEventListener('click', () => {
+                            console.log("Product ID:", img.getAttribute('data-id'));
+                        });
+                    });
+
+                    // Добавляем заказ в контейнер
+                    container.appendChild(orderBlock);
+                });
+
+                // orders.forEach(order => {
+                //     // Подсчет общей суммы заказа
+                //     const totalAmount = order.products.reduce((sum, product) => sum + product.price, 0);
+
+                // Создание блока заказа
+                // const orderBlock = document.createElement("div");
+                // orderBlock.classList.add("order-block");
+
+                // orderBlock.innerHTML = `
+                //     <div class="order-row">
+                //         <!-- Дата заказа -->
+                //         <div class="order-date">${order.closedate || "Дата не указана"}</div>
+
+                //         <!-- Состав заказа -->
+                //         <div class="order-products">
+                //             <div class="products-title">Состав (${order.products.length})</div>
+                //             <div class="products-list">
+                //                 ${order.products.map(product => `
+                //                     <div class="product-image" onclick="console.log('Product ID:', ${product.product_id})"></div>
+                //                 `).join("")}
+                //             </div>
+                //         </div>
+
+                //         <!-- Статус -->
+                //         <div class="order-status">
+                //             <div class="status-label">Статус доставки</div>
+                //             <div class="status-value">${order.status || "Не указан"}</div>
+                //         </div>
+
+                //         <!-- Бонусы -->
+                //         <div class="order-bonus">
+                //             <div class="bonus-label">Бонусы</div>
+                //             <div class="bonus-row">Начислено: <span class="bonus-value">${order.add_bonus}</span></div>
+                //             <div class="bonus-row">Списано: <span class="bonus-value">${order.off_bonus}</span></div>
+                //         </div>
+
+                //         <!-- Сумма -->
+                //         <div class="order-amount">
+                //             <div class="amount-label">Сумма</div>
+                //             <div class="amount-value">${totalAmount} ₽</div>
+                //         </div>
+                //     </div>
+                // `;
+
+                // container.appendChild(orderBlock);
+                // });
+            }
+
+
+            fetchUserOrders();
+
+
+
+            const logoutButton = document.querySelector('[data-elem-id="1742058529763"]');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', () => {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/lk_login';
+                });
+            }
+        }
+
+        const observer = new MutationObserver(() => {
+
+            observer.disconnect();
+            initForm();
+
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
+
+</script>
+
+<style>
+    /* Контейнер для всех заказов */
+    #orders-container {
+        position: relative;
+        /* Устанавливаем абсолютное позиционирование */
+        left: 201px;
+        /* X позиция */
+        top: 154px;
+        /* Y позиция */
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        align-items: center;
+        padding-bottom: 20px;
+    }
+
+    /* Блок заказа */
+    .order-block {
+        width: 959px;
+        height: 164px;
+        background: transparent;
+        /* Прозрачный фон */
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        padding: 10px 20px;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .order-row {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Дата заказа */
+    .order-date {
+        font-size: 20px;
+        font-family: Roboto, sans-serif;
+        font-weight: 600;
+        width: 100px;
+    }
+
+    /* Блок "Состав заказа" */
+    .order-products {
+        width: 212px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .products-title {
+        font-size: 14px;
+        font-family: Roboto, sans-serif;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+
+    .products-list {
+        display: flex;
+        gap: 5px;
+    }
+
+    .product-image {
+        width: 30px;
+        height: 30px;
+        background: #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    /* Блок "Статус" */
+    .order-status {
+        width: 108px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .status-label {
+        font-size: 14px;
+        font-family: Roboto, sans-serif;
+        font-weight: 500;
+    }
+
+    .status-value {
+        font-size: 16px;
+        font-family: Roboto, sans-serif;
+        font-weight: 600;
+    }
+
+    /* Блок "Бонусы" */
+    .order-bonus {
+        width: 113px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bonus-label {
+        font-size: 14px;
+        font-family: Roboto, sans-serif;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+
+    .bonus-row {
+        font-size: 14px;
+        font-family: Roboto, sans-serif;
+        font-weight: 500;
+    }
+
+    .bonus-value {
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    /* Блок "Сумма" */
+    .order-amount {
+        width: 82px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .amount-label {
+        font-size: 14px;
+        font-family: Roboto, sans-serif;
+        font-weight: 500;
+    }
+
+    .amount-value {
+        font-size: 20px;
+        font-weight: 600;
+    }
+</style>

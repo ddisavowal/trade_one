@@ -1,0 +1,72 @@
+<script>
+    // Пример скрипта для скрытия капчи
+    // setInterval(function() {
+    //     const captchaBlock = document.querySelector('.captcha');
+    //     if (captchaBlock) {
+    //         captchaBlock.style.display = 'none';
+    //         console.log("Капча скрыта");
+    //     }
+    // }, 1000); // Проверка каждую секунду
+
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("Общий скрипт загружен");
+
+        const loginBlock = document.getElementById('rec898848472');
+        const registerBlock = document.getElementById('rec899921581');
+        const confirmBlock = document.getElementById('rec899934118');
+
+        loginBlock.style.display = 'block';
+        registerBlock.style.display = 'none';
+        confirmBlock.style.display = 'none';
+
+        // Переключение на регистрацию
+        document.querySelector('[data-elem-id="1742201423544"]').addEventListener('click', () => {
+            console.log("Переключаемся на регистрацию");
+            loginBlock.style.display = 'none';
+            registerBlock.style.display = 'block';
+            confirmBlock.style.display = 'none';
+            setTimeout(function () {
+                // Ваши действия после небольшой задержки
+                console.log('Ждем перед переходом к регистрации');
+            }, 500);
+        });
+        const observer = new MutationObserver(function (mutationsList, observer) {
+            const form = document.querySelector('#form899921581');
+            if (form) {
+                observer.disconnect(); // Прекращаем наблюдение после нахождения формы
+
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.addEventListener('click', function (event) {
+                        event.preventDefault(); // Предотвращаем стандартное поведение кнопки
+                        console.log("Переход на блок подтверждения");
+
+                        // Переходим на блок подтверждения
+                        loginBlock.style.display = 'none';
+                        registerBlock.style.display = 'none';
+                        confirmBlock.style.display = 'block';
+                    });
+                } else {
+                    console.error("Кнопка не найдена");
+                }
+            }
+        });
+
+        // Наблюдаем за изменениями в DOM
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Переключение на подтверждение кода
+        // document.querySelector('#form899921581 button[type="submit"]').addEventListener('click', (event) => {
+        //     event.preventDefault(); // Предотвращаем отправку формы
+        //     console.log("Переход на блок подтверждения");
+
+        //     loginBlock.style.display = 'none';
+        //     registerBlock.style.display = 'none';
+        //     confirmBlock.style.display = 'block';
+        //     setTimeout(function() {
+        //     // Ваши действия после небольшой задержки
+        //     console.log('Ждем перед переходом к регистрации');
+        // }, 500); 
+        // });
+    });
+</script>

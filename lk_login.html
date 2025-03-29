@@ -1,0 +1,85 @@
+<script>
+    // document.addEventListener("DOMContentLoaded", function () {
+    const observer = new MutationObserver(function (mutationsList, observer) {
+
+        const form = document.querySelector('#form898848472');
+        if (form) {
+
+            observer.disconnect();
+
+            // Получаем кнопку внутри формы
+            const button = form.querySelector('button[type="submit"]');
+            if (!button) {
+
+                return;
+            }
+            // const button = document.querySelector('#form898848472 button[type="submit"]');
+            const passwordField = document.querySelector(`[data-input-lid="1742200630359"] input`);
+            // console.log(passwordField.getAttribute('type'));
+
+            // Изменяем атрибут type на "password"
+            if (passwordField) {
+                passwordField.setAttribute('type', 'password');
+                passwordField.setAttribute('name', 'password');
+                // Убираем валидацию на "name"
+                passwordField.removeAttribute('data-tilda-rule');
+                // console.log(passwordField.getAttribute('type'));
+            }
+            // Обработчик отправки формы входа
+            button.addEventListener('click', function (event) {
+                event.preventDefault(); // Предотвращаем стандартное поведение кнопки (отправка формы)
+
+
+                // Получаем данные из полей формы
+                const email = document.querySelector('[data-input-lid="1742200630358"] input').value;
+                const password = passwordField.value;
+
+
+                if (!email || !password) {
+                    alert("Введите email и пароль!");
+                    return;
+                }
+
+                console.log("Отправляем данные на сервер...");
+
+                // Отправляем запрос на сервер для получения токена
+                fetch('http://127.0.0.1:8000/api/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Ответ от сервера:", data.access);
+                        if (data.access) {
+                            localStorage.setItem('auth_token', data.access); // Сохраняем токен
+                            window.location.reload();
+                            window.location.href = '/lk_main';
+                            // form.style.display = 'none';
+                            // profileContainer.style.display = 'block';
+                            // fetchUserData(); // Получаем данные пользователя
+                        } else {
+                            alert('Ошибка авторизации');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Ошибка запроса:", error);
+                    });
+            });
+
+        }
+        else {
+            return;
+
+
+        }
+
+
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+</script>
